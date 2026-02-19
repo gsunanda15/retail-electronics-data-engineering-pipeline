@@ -1,0 +1,9 @@
+{
+	"name": "electronicssalesadf",
+	"location": "uksouth",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "4865d145-5e05-4968-8e85-fa13222b15e0",
+		"tenantId": "14e2a78a-8839-43b2-b333-2746fcc4f575"
+	}
+}
