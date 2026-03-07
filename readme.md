@@ -1,181 +1,356 @@
-# **Retail Electronics Sales Data Engineering Pipeline**
+# Retail Electronics Sales Data Engineering Pipeline
 
-<img width="1508" height="432" alt="image" src="https://github.com/user-attachments/assets/a8ac45c2-319d-4d3a-9b82-642b6d0517d8" />
+<img width="1508" height="432" alt="ADF Pipeline" src="https://github.com/user-attachments/assets/a8ac45c2-319d-4d3a-9b82-642b6d0517d8" />
 
-Project Overview
-This project demonstrates an end-to-end modern data engineering pipeline for processing Retail Electronics Sales data using the Medallion Architecture (Bronze → Silver → Gold).
-The pipeline ingests raw sales data, performs incremental loading, applies data validation and transformation, and finally builds a star schema data model for analytical reporting.
-The orchestration of the pipeline is managed using Azure Data Factory, while data transformation and processing are handled in Azure Databricks using PySpark.
+## Project Overview
 
-# **Architecture Overview**
+This project demonstrates an **end-to-end modern data engineering pipeline** for processing Retail Electronics Sales data using the **Medallion Architecture (Bronze → Silver → Gold)**.
 
-### The solution follows the Medallion Architecture pattern:
+The pipeline ingests raw sales data, performs incremental loading, applies data validation and transformation, and builds a **Star Schema data model** for analytical reporting.
 
-Source Files
-     │
-     ▼
-Azure Data Lake Storage (Raw)
-     │
-     ▼
-Azure SQL Database (Staging)
-     │
-     ▼
-Bronze Layer (CSV)
-     │
-     ▼
-Silver Layer (Parquet)
-     │
-     ▼
-Gold Layer (Delta Tables)
-     │
-     ▼
-Star Schema for Analytics
+Pipeline orchestration is handled using **Azure Data Factory**, while data processing and transformations are implemented in **Azure Databricks**.
 
-# **Technologies used:**
+---
 
-Azure Data Factory – Pipeline orchestration
-Azure Data Lake Storage Gen2 – Data lake storage
-Azure Databricks – Data transformation and processing
-Azure SQL Database – Staging and watermark tracking
-Delta Lake – Gold layer storage
-PySpark – Data processing
-Data Pipeline Workflow
+# Architecture Overview
 
-# **The pipeline performs the following steps**
+```mermaid
+flowchart LR
+    A[Source Files] --> B[Azure Data Lake Storage Gen2 - Raw]
+    B --> C[Azure SQL Database - Staging]
+    C --> D[Bronze Layer - CSV]
+    D --> E[Silver Layer - Parquet]
+    E --> F[Gold Layer - Delta Tables]
+    F --> G[Star Schema / BI Analytics]
+```
+
+---
+
+# Technologies Used
+
+- **Azure Data Factory** – Pipeline orchestration  
+- **Azure Data Lake Storage Gen2** – Data lake storage  
+- **Azure Databricks** – Data transformation and processing  
+- **Azure SQL Database** – Staging and watermark tracking  
+- **Delta Lake** – Gold layer storage  
+- **PySpark** – Distributed data processing  
+- **Git** – Version control  
+- **CI/CD Pipelines** – Automated deployment  
+
+---
+
+# Data Pipeline Workflow
+
+The pipeline executes the following steps:
 
 ### 1. Source Data Ingestion
-Retail Electronics Sales data is initially uploaded into Azure Data Lake Storage Gen2 as raw source files.
-These files contain transactional sales data including:
-Customer details
-Product details
-Store information
-Transaction date
-Sales amount
+Retail Electronics Sales data is uploaded into **Azure Data Lake Storage Gen2** as raw files containing:
+
+- Customer details
+- Product details
+- Store information
+- Transaction date
+- Sales amount
+
+---
 
 ### 2. Incremental Load Detection
-The pipeline begins with Lookup activities in Azure Data Factory:
-Lookup: Last Load
-Fetches the last processed timestamp from the watermark table stored in Azure SQL Database.
-Lookup: Current Load
-Determines the current maximum timestamp from the source data.
-This allows the pipeline to process only new or updated records.
+
+Two **Lookup activities** in Azure Data Factory detect new data:
+
+**Lookup – Last Load**
+
+Retrieves the last processed timestamp from the watermark table stored in Azure SQL Database.
+
+**Lookup – Current Load**
+
+Determines the latest timestamp available in the source data.
+
+Only records between these timestamps are processed.
+
+---
 
 ### 3. Incremental Data Load
-A Copy Data activity performs the incremental data ingestion.
-Source: ADLS Gen2 Raw Files
-Destination: Azure SQL Database Staging Table
+
+A **Copy Data activity** loads incremental data.
+
+**Source**
+
+ADLS Gen2 Raw Files
+
+**Destination**
+
+Azure SQL Database staging table
+
 Only records between:
+
+```
 LastLoadTimestamp
-and
 CurrentLoadTimestamp
+```
+
 are copied.
-This ensures efficient incremental data processing.
+
+---
 
 ### 4. Watermark Update
-After successful ingestion, a Stored Procedure activity updates the watermark table in Azure SQL Database.
-This step ensures the pipeline remembers the last successful load timestamp for the next execution.
 
-### 5. Bronze Layer Processing
-The first Azure Databricks Notebook loads the raw staging data into the Bronze layer.
-Bronze Layer Characteristics
-Raw data ingestion
-Minimal transformations
-Stored in CSV format
-Preserves original data structure
-Bronze data acts as a raw historical data archive.
+A **Stored Procedure activity** updates the watermark table in Azure SQL Database after successful ingestion.
 
-### 6. Silver Layer Processing
-A second Databricks Notebook processes the Bronze data and loads it into the Silver layer.
-Transformations Applied
-Data validation
-Null handling
-Data type corrections
-Standardization
-Duplicate removal
-Schema enforcement
-The cleansed data is stored in:
-Parquet format
-Benefits of Parquet:
-Columnar storage
-Faster queries
-Efficient compression
+This ensures the pipeline processes only new records in the next execution.
 
-### 7. Gold Layer Data Modeling
-The Gold layer represents business-ready data models.
-In this stage, the pipeline builds a Star Schema consisting of:
-Dimension Tables
-dim_customers
-dim_products
-dim_store
-dim_date
-Fact Table
-fact_sales
+---
 
-### 8. Slowly Changing Dimension (SCD Type 1)
-Dimension tables use SCD Type 1 logic.
-This means:
-Existing records are overwritten
-No historical tracking
-Only the latest values are maintained
+# Medallion Architecture
+
+The pipeline follows the **Medallion Architecture** pattern.
+
+| Layer | Format | Purpose |
+|------|------|------|
+| Bronze | CSV | Raw data ingestion |
+| Silver | Parquet | Cleaned and validated data |
+| Gold | Delta | Business-ready analytical data |
+
+---
+
+# Bronze Layer
+
+The **Bronze layer** stores raw data ingested from the source system.
+
+### Characteristics
+
+- Minimal transformations
+- Raw historical storage
+- Stored in CSV format
+- Preserves original data structure
+
+### Source
+
+ADLS Gen2 raw files
+
+### Sink
+
+Bronze container in Data Lake
+
+---
+
+# Silver Layer
+
+The **Silver layer** performs data cleansing and transformation.
+
+### Source
+
+Bronze Layer → Raw CSV files
+
+### Data Quality Checks
+
+| Validation Rule | Description |
+|---|---|
+| Unit_Price > 0 | Ensures product price is valid |
+| Units_Sold > 0 | Ensures quantity sold is valid |
+| Discount_Percent between 0 and 100 | Ensures discount values are realistic |
+
+Duplicate records are removed using **Order_ID**.
+
+---
+
+### Invalid Data Handling
+
+Records failing validation rules are written to a **quarantine location**.
+
+```
+/silver/quarantine/
+```
+
+This allows investigation of data issues without affecting analytics.
+
+---
+
+### Data Transformations
+
+After validation, the following transformations are applied:
+
+| Column | Description |
+|---|---|
+| Gross_Revenue | Unit_Price × Units_Sold |
+| Discount_Amount | Gross_Revenue × Discount_Percent |
+| Total_Revenue | Gross_Revenue − Discount_Amount |
+
+Numeric columns are standardized by rounding to two decimal places.
+
+---
+
+### Output
+
+Cleaned data is written to the Silver layer in **Parquet format**.
+
+```
+/silver/clean/
+```
+
+---
+
+# Gold Layer
+
+The **Gold layer** contains business-ready analytical tables built using a **Star Schema**.
+
+```
+gold_layer
+├── dim_customer
+├── dim_products
+├── dim_store
+├── dim_date
+└── fact_sales
+```
+
+Tables are stored using **Delta format**.
+
+---
+
+# Dimension Tables
+
+## dim_customer
+
+Source: Silver Layer
+
+Transformations:
+
+- Extract customer attributes
+- Remove duplicates
+- Compare with existing dimension table
+- Generate surrogate keys
+- Apply **SCD Type 1** updates
+
+Sink:
+
+```
+gold/dim_customer
+```
+
+---
+
+## dim_products
+
+Source: Silver Layer
+
+Transformations:
+
+- Extract product attributes
+- Remove duplicate records
+- Generate surrogate keys
+- Apply SCD Type 1 logic
+
+Sink:
+
+```
+gold/dim_products
+```
+
+---
+
+## dim_store
+
+Source: Silver Layer
+
+Transformations:
+
+- Extract store attributes
+- Identify new and existing stores
+- Generate surrogate keys
+- Apply SCD Type 1 merge logic
+
+Sink:
+
+```
+gold/dim_store
+```
+
+---
+
+## dim_date
+
+Source:
+
+Transaction date from Silver dataset
+
+Transformations:
+
+- Extract Year, Month, Quarter, Day
+- Generate surrogate key
+- Create calendar attributes
+
+Sink:
+
+```
+gold/dim_date
+```
+
+---
+
+# Fact Table
+
+## fact_sales
+
+Source: Silver Layer dataset
+
+### Transformations
+
+- Join with dimension tables:
+  - dim_customer
+  - dim_products
+  - dim_store
+  - dim_date
+- Replace business keys with surrogate keys
+- Generate analytical measures
+
+### Example Measures
+
+- Sales Amount
+- Quantity
+- Revenue
+
+Sink:
+
+```
+gold/fact_sales
+```
+
+---
+
+# Slowly Changing Dimension (SCD Type 1)
+
+Dimension tables use **SCD Type 1** logic.
+
+Characteristics:
+
+- Existing records are overwritten
+- No historical tracking
+- Only the latest value is stored
+
 Example:
+
 If a product price changes, the old value is replaced with the new value.
 
-### 9. Gold Layer Storage
-The final Gold tables are stored as Delta Tables in Azure Databricks.
-#### Benefits of Delta Lake:
-ACID transactions
-Schema enforcement
-Time travel
-Faster analytics queries
+---
 
-# Pipeline Execution Flow
+# Azure Data Factory Pipeline Flow
 
-### The pipeline runs in the following sequence:
-
+```
 Lookup Last Load
-      │
+      ↓
 Lookup Current Load
-      │
+      ↓
 Copy Incremental Data
-      │
-Update Watermark Table
-      │
+      ↓
+Update Watermark
+      ↓
 Bronze Notebook
-      │
+      ↓
 Silver Notebook
-      │
+      ↓
 Dimension Notebooks
-      │
+      ↓
 Fact Sales Notebook
+```
 
-Dimension tables are built first, followed by the Fact Sales table.
-
-# Star Schema Design
-
-### The Gold layer implements the following data model:
-
-              dim_customers
-                     │
-                     │
-dim_products ─── fact_sales ─── dim_store
-                     │
-                     │
-                 dim_date
-
-This structure enables efficient analytical queries and reporting.
-
-# Key Features of the Pipeline
-Incremental data processing
-Medallion architecture implementation
-Data quality validation
-Distributed data processing using Spark
-Optimized storage using Parquet and Delta
-Star schema for analytics
-Automated orchestration using Azure Data Factory
-
-
-
-
-
-
-
+---
