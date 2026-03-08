@@ -60,7 +60,7 @@
 				}
 			},
 			{
-				"name": "rowcount ",
+				"name": "rowcount",
 				"type": "Script",
 				"dependsOn": [
 					{
@@ -92,7 +92,10 @@
 					"scripts": [
 						{
 							"type": "Query",
-							"text": "select count(*) from [dbo].[sales_raw] where Order_Date >'@{activity('lastload').output.firstRow.LAST_LOAD}' and  Order_Date <='@{activity('currentload').output.firstRow.current_load}'"
+							"text": {
+								"value": "SELECT COUNT(*) FROM dbo.sales_raw\nWHERE Order_Date > '@{activity('lastload').output.firstRow.LAST_LOAD}'\nAND Order_Date <= '@{activity('currentload').output.firstRow.current_load}'",
+								"type": "Expression"
+							}
 						}
 					],
 					"scriptBlockExecutionTimeout": "02:00:00"
@@ -101,9 +104,11 @@
 			{
 				"name": "Incrementalrows",
 				"type": "IfCondition",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Failed",
 				"dependsOn": [
 					{
-						"activity": "rowcount ",
+						"activity": "rowcount",
 						"dependencyConditions": [
 							"Succeeded"
 						]
