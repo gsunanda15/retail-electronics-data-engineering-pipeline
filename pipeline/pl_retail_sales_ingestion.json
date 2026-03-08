@@ -139,7 +139,10 @@
 								"scripts": [
 									{
 										"type": "Query",
-										"text": "INSERT INTO pipeline_audit_log\n(\npipeline_name,\npipeline_run_id,\nactivity_name,\ntable_name,\nstatus,\nrow_count,\nstart_time,\nend_time\n)\nVALUES\n(\n'pl_retail_sales_ingestion',\n'@{pipeline().RunId}',\n'Incremental_Check',\n'retail_sales',\n'NoData',\n0,\nGETDATE(),\nGETDATE()\n);"
+										"text": {
+											"value": "INSERT INTO pipeline_audit_log\n(\npipeline_name,\npipeline_run_id,\nactivity_name,\ntable_name,\nstatus,\nrow_count,\nstart_time,\nend_time\n)\nVALUES\n(\n'pl_retail_sales_ingestion',\n'@{pipeline().RunId}',\n'Incremental_Check',\n'retail_sales',\n'NoData',\n0,\nGETDATE(),\nGETDATE()\n);",
+											"type": "Expression"
+										}
 									}
 								],
 								"scriptBlockExecutionTimeout": "02:00:00"
@@ -292,7 +295,10 @@
 								"scripts": [
 									{
 										"type": "Query",
-										"text": "INSERT INTO pipeline_audit_log\n(\npipeline_name,\npipeline_run_id,\nactivity_name,\ntable_name,\nstatus,\nrow_count,\nstart_time,\nend_time\n)\nVALUES\n(\n'pl_retail_sales_ingestion',\n'@{pipeline().RunId}',\n'RetailSales_Incremental_Load',\n'retail_sales',\n'Success',\n@{activity('rowcount').output.firstRow.row_count},\nGETDATE(),\nGETDATE()\n)"
+										"text": {
+											"value": "INSERT INTO pipeline_audit_log\n(\npipeline_name,\npipeline_run_id,\nactivity_name,\ntable_name,\nstatus,\nrow_count,\nstart_time,\nend_time\n)\nVALUES\n(\n'pl_retail_sales_ingestion',\n'@{pipeline().RunId}',\n'RetailSales_Incremental_Load',\n'retail_sales',\n'Success',\n@{activity('rowcount').output.firstRow.row_count},\nGETDATE(),\nGETDATE()\n)",
+											"type": "Expression"
+										}
 									}
 								],
 								"scriptBlockExecutionTimeout": "02:00:00"
