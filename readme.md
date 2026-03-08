@@ -159,132 +159,64 @@ Cleaned data is written to the Silver layer in **Parquet format**.
 
 ---
 
-# Gold Layer
+# Data Transformations – Gold Layer
 
-The **Gold layer** contains business-ready analytical tables built using a **Star Schema**.
-
-```
-gold_layer
-├── dim_customer
-├── dim_products
-├── dim_store
-├── dim_date
-└── fact_sales
-```
-
-Tables are stored using **Delta format**.
-
----
-
-# Dimension Tables
+All transformations done using ADF Data Flows and Databricks Notebooks (Spark-backed)
 
 ## dim_customer
-
-Source: Silver Layer
-
-Transformations:
-
-- Extract customer attributes
-- Remove duplicates
-- Compare with existing dimension table
-- Generate surrogate keys
-- Apply **SCD Type 1** updates
-
-Sink:
-
-```
-gold/dim_customer
-```
-
----
+- Source: Silver Layer (dim_passenger)
+- Derived Column: Extract customer attributes (name, age, gender_flag, country)
+- Filter: Remove duplicate records based on natural key
+- Surrogate Key Generation: Using incremental logic with parameter-driven approach
+  - Parameter: Incremental_Flag (0 = full load, 1 = incremental load)
+  - If Flag = 0: Start surrogate keys from 1
+  - If Flag = 1: Get max existing key from target table and add monotonically_increasing_id()
+  - New column: dim_customer_key = max_value + monotonically_increasing_id()
+- SCD Type 1: Implemented using Delta merge operation
+  - Merge condition: Match on business key
+  - When matched: Update existing records with latest attributes
+  - When not matched: Insert new records with generated surrogate keys
+- Sink: Delta Lake → gold/dim_customer/
 
 ## dim_products
-
-Source: Silver Layer
-
-Transformations:
-
-- Extract product attributes
-- Remove duplicate records
-- Generate surrogate keys
-- Apply SCD Type 1 logic
-
-Sink:
-
-```
-gold/dim_products
-```
-
----
+- Source: Silver Layer
+- Select: Extract product attributes (product_id, product_name, category, price)
+- Aggregate: Remove duplicate product records
+- Surrogate Key Generation: Using same incremental logic
+  - Full load (Flag=0): Keys start from 1
+  - Incremental load (Flag=1): max_value + monotonically_increasing_id()
+- SCD Type 1: Delta merge operation for upserts
+- Sink: Delta Lake → gold/dim_products/
 
 ## dim_store
-
-Source: Silver Layer
-
-Transformations:
-
-- Extract store attributes
-- Identify new and existing stores
-- Generate surrogate keys
-- Apply SCD Type 1 merge logic
-
-Sink:
-
-```
-gold/dim_store
-```
-
----
+- Source: Silver Layer
+- Select: Extract store attributes (store_id, store_name, location, region)
+- Surrogate Key Generation: Parameter-based incremental logic
+  - New stores get keys = max existing key + monotonically_increasing_id()
+- SCD Type 1: Delta merge for updates
+- Sink: Delta Lake → gold/dim_store/
 
 ## dim_date
-
-Source:
-
-Transaction date from Silver dataset
-
-Transformations:
-
-- Extract Year, Month, Quarter, Day
-- Generate surrogate key
-- Create calendar attributes
-
-Sink:
-
-```
-gold/dim_date
-```
-
----
-
-# Fact Table
+- Source: Transaction dates from Silver Layer
+- Derived Column: Extract Year, Month, Quarter, Day, Week number
+- Surrogate Key Generation: Generate integer surrogate key (YYYYMMDD format)
+- Derived Column: Create additional calendar attributes
+- Alter Row: Insert only (static dimension, no SCD needed)
+- Sink: Delta Lake → gold/dim_date/
 
 ## fact_sales
-
-Source: Silver Layer dataset
-
-### Transformations
-
-- Join with dimension tables:
-  - dim_customer
-  - dim_products
-  - dim_store
-  - dim_date
-- Replace business keys with surrogate keys
-- Generate analytical measures
-
-### Example Measures
-
-- Sales Amount
-- Quantity
-- Revenue
-
-Sink:
-
-```
-gold/fact_sales
-```
+- Source: Silver Layer dataset
+- Join: Replace business keys with surrogate keys by joining with all dimension tables
+- Derived Column: Calculate measures (Sales Amount, Quantity, Revenue)
+- Select: Final fact table columns with surrogate keys and measures
+- Alter Row: Insert only (new transactions)
+- Sink: Delta Lake → gold/fact_sales/
 
 ---
+
+## 🔑 Surrogate Key Generation Strategy
+
+All dimension tables follow a consistent approach for surrogate key generation using parameter-driven incremental logic:
 
 # Slowly Changing Dimension (SCD Type 1)
 
@@ -547,6 +479,7 @@ This helps with:
 # Audit Table Schema
 
 The audit table stores execution metadata for every pipeline run.
+
 
 
 
