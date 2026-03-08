@@ -60,123 +60,9 @@
 				}
 			},
 			{
-				"name": "Incremantalload",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "lastload",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "currentload",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "AzureSqlSource",
-						"sqlReaderQuery": {
-							"value": "select * from dbo.sales_raw where Order_Date >'@{activity('lastload').output.firstRow.LAST_LOAD}' and  Order_Date <='@{activity('currentload').output.firstRow.current_load}'",
-							"type": "Expression"
-						},
-						"queryTimeout": "02:00:00",
-						"partitionOption": "None"
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"type": "TabularTranslator",
-						"typeConversion": true,
-						"typeConversionSettings": {
-							"allowDataTruncation": true,
-							"treatBooleanAsNumber": false
-						}
-					}
-				},
-				"inputs": [
-					{
-						"referenceName": "electronicssqldbDS",
-						"type": "DatasetReference",
-						"parameters": {
-							"schema": "dbo",
-							"table": "sales_raw"
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ParquetdatalakeDS",
-						"type": "DatasetReference"
-					}
-				]
-			},
-			{
-				"name": "Updatewatermarktable",
-				"type": "SqlServerStoredProcedure",
-				"dependsOn": [
-					{
-						"activity": "Incremantalload",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"storedProcedureName": "[dbo].[watermarktableupdate]",
-					"storedProcedureParameters": {
-						"LAST_LOAD": {
-							"value": {
-								"value": "@activity('currentload').output.firstRow.current_load",
-								"type": "Expression"
-							},
-							"type": "DateTime"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "electronicssqldbLS",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
 				"name": "sliver",
 				"type": "DatabricksNotebook",
-				"dependsOn": [
-					{
-						"activity": "Updatewatermarktable",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -360,6 +246,149 @@
 					"referenceName": "AzureDatabricks_LS",
 					"type": "LinkedServiceReference"
 				}
+			},
+			{
+				"name": "rowcount ",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "lastload",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "electronicssqldbLS",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": "select count(*) from from [dbo].[sales_raw] "
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "Incrementalload",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"ifTrueActivities": [
+						{
+							"name": "Incremantalload_copy1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "select * from dbo.sales_raw where Order_Date >'@{activity('lastload').output.firstRow.LAST_LOAD}' and  Order_Date <='@{activity('currentload').output.firstRow.current_load}'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "electronicssqldbDS",
+									"type": "DatasetReference",
+									"parameters": {
+										"schema": "dbo",
+										"table": "sales_raw"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ParquetdatalakeDS",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "Updatewatermarktable_copy1",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Incremantalload_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[watermarktableupdate]",
+								"storedProcedureParameters": {
+									"LAST_LOAD": {
+										"value": {
+											"value": "@activity('currentload').output.firstRow.current_load",
+											"type": "Expression"
+										},
+										"type": "DateTime"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "electronicssqldbLS",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Incrementalload_copy1",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": []
 			}
 		],
 		"annotations": [],
