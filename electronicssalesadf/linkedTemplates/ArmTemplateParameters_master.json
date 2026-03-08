@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "electronicssalesadf"
+		},
+		"AzureDatabricks_LS_accessToken": {
+			"value": ""
+		},
+		"electronicsdatalakeLS_accountKey": {
+			"value": ""
+		},
+		"electronicssqldbLS_password": {
+			"value": ""
+		},
+		"electronicsdatalakeLS_properties_typeProperties_url": {
+			"value": "https://electronicsdatalake.dfs.core.windows.net/"
+		},
+		"electronicssqldbLS_properties_typeProperties_server": {
+			"value": "electronicsserver.database.windows.net"
+		},
+		"electronicssqldbLS_properties_typeProperties_database": {
+			"value": "electronicsdb"
+		},
+		"electronicssqldbLS_properties_typeProperties_userName": {
+			"value": "adminsunanda"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
