@@ -283,12 +283,57 @@
 			{
 				"name": "Incrementalload",
 				"type": "IfCondition",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "rowcount ",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
+					"expression": {
+						"value": "@activity('rowcount ').output>, 0",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Deleteemptyfiles",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "electonicsdatalakeDS",
+									"type": "DatasetReference",
+									"parameters": {
+										"folder": "bronze",
+										"filename": {
+											"value": "@concat('retail_sales_', formatDateTime(utcNow(),'yyyyMMdd_HHmmss'), '.csv')",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": true,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					],
 					"ifTrueActivities": [
 						{
-							"name": "Incremantalload_copy1",
+							"name": "Incremantalload",
 							"type": "Copy",
 							"dependsOn": [],
 							"policy": {
@@ -319,6 +364,7 @@
 									}
 								},
 								"enableStaging": false,
+								"enableSkipIncompatibleRow": false,
 								"translator": {
 									"type": "TabularTranslator",
 									"typeConversion": true,
@@ -346,11 +392,11 @@
 							]
 						},
 						{
-							"name": "Updatewatermarktable_copy1",
+							"name": "Updatewatermarktable",
 							"type": "SqlServerStoredProcedure",
 							"dependsOn": [
 								{
-									"activity": "Incremantalload_copy1",
+									"activity": "Incremantalload",
 									"dependencyConditions": [
 										"Succeeded"
 									]
