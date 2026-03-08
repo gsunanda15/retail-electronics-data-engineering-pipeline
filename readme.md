@@ -2,25 +2,51 @@
 <img width="1722" height="467" alt="image" src="https://github.com/user-attachments/assets/2b286f51-8b28-48dd-8017-f20e151dab6f" />
 
 <img width="1335" height="592" alt="image" src="https://github.com/user-attachments/assets/601225ee-728d-42fc-b43a-1f68b700d6a2" />
+# Project Highlights
+
+This project demonstrates an **end-to-end Azure Data Engineering pipeline** built using modern cloud data architecture patterns.
+
+Key highlights of this project include:
+
+- Implementation of **Medallion Architecture (Bronze → Silver → Gold)** for scalable data processing
+- **Incremental data ingestion** using watermark-based loading
+- **Azure Data Factory pipelines** for orchestration and automation
+- **Azure Databricks notebooks** for large-scale data transformations using PySpark
+- Implementation of **data quality validation rules**
+- Handling of invalid records using a **quarantine data zone**
+- Creation of **Star Schema analytical model** in the Gold layer
+- Implementation of **Slowly Changing Dimension (SCD Type 1)** logic
+- **Delta Lake tables** for optimized analytical storage
+- **Pipeline monitoring and audit logging** using SQL audit tables
+- **Failure notification system** using Azure Logic Apps email alerts
+- **CI/CD implementation** using GitHub integration with Azure Data Factory
+- **Scheduled pipeline execution** using ADF triggers (every 12 hours)
+
+This project simulates a **real-world retail data engineering workflow** and demonstrates best practices used in modern cloud data platforms.
+
+---
+
+# Skills Demonstrated
+
+- Azure Data Factory
+- Azure Databricks
+- PySpark
+- Azure Data Lake Storage Gen2
+- Delta Lake
+- Data Modeling (Star Schema)
+- Incremental Data Processing
+- Data Quality Validation
+- Data Pipeline Monitoring
+- CI/CD for Data Pipelines
+- Cloud Data Engineering Architecture
+---
 
 ## Project Overview
 This project implements an end-to-end **Retail Sales Data Pipeline** using the **Medallion Architecture (Bronze → Silver → Gold)**.  
 The pipeline ingests raw retail sales data, performs data validation and transformation, and produces business-ready analytical tables for reporting.
 
 The solution is orchestrated using **Azure Data Factory**, transformations are implemented using **Azure Databricks notebooks**, and data is stored in **Azure Data Lake Storage Gen2**.
-
----
-# Technologies Used
-
-- **Azure Data Factory** – Pipeline orchestration  
-- **Azure Data Lake Storage Gen2** – Data lake storage  
-- **Azure Databricks** – Data transformation and processing  
-- **Azure SQL Database** – Staging and watermark tracking  
-- **Delta Lake** – Gold layer storage  
-- **PySpark** – Distributed data processing  
-- **Git** – Version control  
-- **CI/CD Pipelines** – Automated deployment  
-
+  
 ---
 # Architecture
 
@@ -357,6 +383,171 @@ This project demonstrates several important data engineering concepts:
 - Pipeline Monitoring and Alerting
 - CI/CD for Data Pipelines
 - Cloud Data Engineering using Azure Services
+
+---
+
+# How to Run This Project
+
+Follow the steps below to deploy and execute the project.
+
+## 1. Setup Azure Resources
+
+Create the following Azure services:
+
+- Azure Data Factory
+- Azure Data Lake Storage Gen2
+- Azure Databricks Workspace
+- Azure SQL Database
+- Azure Logic App (for email alerts)
+
+---
+
+## 2. Configure Data Lake Structure
+
+Create the following containers and folders.
+# How to Run This Project
+
+Follow the steps below to deploy and execute the project.
+
+## 1. Setup Azure Resources
+
+Create the following Azure services:
+
+- Azure Data Factory
+- Azure Data Lake Storage Gen2
+- Azure Databricks Workspace
+- Azure SQL Database
+- Azure Logic App (for email alerts)
+
+---
+
+## 2. Configure Data Lake Structure
+
+Create the following containers and folders.
+# How to Run This Project
+
+Follow the steps below to deploy and execute the project.
+
+## 1. Setup Azure Resources
+
+Create the following Azure services:
+
+- Azure Data Factory
+- Azure Data Lake Storage Gen2
+- Azure Databricks Workspace
+- Azure SQL Database
+- Azure Logic App (for email alerts)
+
+---
+
+## 2. Configure Data Lake Structure
+
+Create the following containers and folders
+
+```
+datalake
+│
+├── bronze
+│ └── retail_sales
+│
+├── silver
+│ ├── clean
+│ └── quarantine
+│
+└── gold
+├── dim_customer
+├── dim_products
+├── dim_store
+├── dim_date
+└── fact_sales
+```
+
+---
+
+## 3. Upload Source Dataset
+
+Upload the retail dataset into the Bronze layer.
+
+Example location:
+/bronze/retail_sales/retail_sales_timestamp.csv
+
+---
+
+## 4. Deploy Azure Data Factory Pipelines
+
+Deploy the following pipelines:
+pl_retail_sales_ingestion
+pl_retail_sales_silver_to_gold
+
+These pipelines handle:
+
+- Incremental ingestion
+- Watermark tracking
+- Data transformation
+- Monitoring and logging
+
+---
+
+## 5. Configure Databricks Notebooks
+
+Create notebooks for:
+silver_transformation
+dim_customer
+dim_products
+dim_store
+dim_date
+fact_sales
+
+These notebooks perform Silver and Gold layer transformations.
+
+---
+
+## 6. Configure Pipeline Trigger
+
+Create an **Azure Data Factory Trigger** to schedule the ingestion pipeline.
+
+Schedule: Every 12 Hours
+
+---
+
+## 7. Configure Failure Alerts
+
+Set up **Azure Logic App** for pipeline monitoring.
+
+Workflow:
+```
+ADF Web Activity
+│
+▼
+Azure Logic App
+│
+▼
+Send Email Alert
+```
+
+This ensures the data engineering team receives notifications if pipeline execution fails.
+
+---
+
+# Pipeline Audit Logging
+
+To track pipeline execution and monitor operational health, this project implements an **audit logging framework**.
+
+Each pipeline run writes execution metadata into the **pipeline_audit_log** table.
+
+This helps with:
+
+- Pipeline monitoring
+- Failure investigation
+- Performance tracking
+- Operational reporting
+
+---
+
+# Audit Table Schema
+
+The audit table stores execution metadata for every pipeline run.
+
 
 
 
