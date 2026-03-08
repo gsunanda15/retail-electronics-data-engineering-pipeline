@@ -1,31 +1,15 @@
-# Retail Electronics Sales Data Engineering Pipeline
+# Retail Sales Data Engineering Pipeline
+<img width="1722" height="467" alt="image" src="https://github.com/user-attachments/assets/2b286f51-8b28-48dd-8017-f20e151dab6f" />
 
-<img width="1508" height="432" alt="ADF Pipeline" src="https://github.com/user-attachments/assets/a8ac45c2-319d-4d3a-9b82-642b6d0517d8" />
+<img width="1335" height="592" alt="image" src="https://github.com/user-attachments/assets/601225ee-728d-42fc-b43a-1f68b700d6a2" />
 
 ## Project Overview
+This project implements an end-to-end **Retail Sales Data Pipeline** using the **Medallion Architecture (Bronze → Silver → Gold)**.  
+The pipeline ingests raw retail sales data, performs data validation and transformation, and produces business-ready analytical tables for reporting.
 
-This project demonstrates an **end-to-end modern data engineering pipeline** for processing Retail Electronics Sales data using the **Medallion Architecture (Bronze → Silver → Gold)**.
-
-The pipeline ingests raw sales data, performs incremental loading, applies data validation and transformation, and builds a **Star Schema data model** for analytical reporting.
-
-Pipeline orchestration is handled using **Azure Data Factory**, while data processing and transformations are implemented in **Azure Databricks**.
+The solution is orchestrated using **Azure Data Factory**, transformations are implemented using **Azure Databricks notebooks**, and data is stored in **Azure Data Lake Storage Gen2**.
 
 ---
-
-# Architecture Overview
-
-```mermaid
-flowchart LR
-    A[Source Files] --> B[Azure Data Lake Storage Gen2 - Raw]
-    B --> C[Azure SQL Database - Staging]
-    C --> D[Bronze Layer - CSV]
-    D --> E[Silver Layer - Parquet]
-    E --> F[Gold Layer - Delta Tables]
-    F --> G[Star Schema / BI Analytics]
-```
-
----
-
 # Technologies Used
 
 - **Azure Data Factory** – Pipeline orchestration  
@@ -38,78 +22,34 @@ flowchart LR
 - **CI/CD Pipelines** – Automated deployment  
 
 ---
+# Architecture
 
-# Data Pipeline Workflow
+The project follows the **Medallion Architecture** pattern:
 
-The pipeline executes the following steps:
-
-### 1. Source Data Ingestion
-Retail Electronics Sales data is uploaded into **Azure Data Lake Storage Gen2** as raw files containing:
-
-- Customer details
-- Product details
-- Store information
-- Transaction date
-- Sales amount
+Bronze → Raw Data  
+Silver → Cleaned and Validated Data  
+Gold → Business Ready Analytical Tables
 
 ---
 
-### 2. Incremental Load Detection
+## Pipeline Flow
 
-Two **Lookup activities** in Azure Data Factory detect new data:
+The Azure Data Factory pipeline performs the following steps:
 
-**Lookup – Last Load**
+1. Retrieve the **last processed watermark** from the watermark table.
+2. Identify the **current load timestamp**.
+3. Calculate the **incremental record count** using a Script activity.
+4. If **incremental records exist**:
+   - Load incremental data into the Bronze layer.
+   - Update the watermark table.
+   - Execute the Databricks transformation pipeline (Silver → Gold).
+   - Log pipeline execution status in the audit table.
+5. If **no incremental records exist**:
+   - Log `NoData` status in the audit table.
+6. If pipeline fails:
+   - Trigger **Web Activity → Azure Logic App → Email Alert**
 
-Retrieves the last processed timestamp from the watermark table stored in Azure SQL Database.
-
-**Lookup – Current Load**
-
-Determines the latest timestamp available in the source data.
-
-Only records between these timestamps are processed.
-
----
-
-### 3. Incremental Data Load
-
-A **Copy Data activity** loads incremental data.
-
-**Source**
-
-ADLS Gen2 Raw Files
-
-**Destination**
-
-Azure SQL Database staging table
-
-Only records between:
-
-```
-LastLoadTimestamp
-CurrentLoadTimestamp
-```
-
-are copied.
-
----
-
-### 4. Watermark Update
-
-A **Stored Procedure activity** updates the watermark table in Azure SQL Database after successful ingestion.
-
-This ensures the pipeline processes only new records in the next execution.
-
----
-
-# Medallion Architecture
-
-The pipeline follows the **Medallion Architecture** pattern.
-
-| Layer | Format | Purpose |
-|------|------|------|
-| Bronze | CSV | Raw data ingestion |
-| Silver | Parquet | Cleaned and validated data |
-| Gold | Delta | Business-ready analytical data |
+The pipeline runs automatically every **12 hours using an ADF Trigger**.
 
 ---
 
@@ -117,20 +57,23 @@ The pipeline follows the **Medallion Architecture** pattern.
 
 The **Bronze layer** stores raw data ingested from the source system.
 
-### Characteristics
+## Characteristics
 
 - Minimal transformations
 - Raw historical storage
 - Stored in CSV format
 - Preserves original data structure
 
-### Source
+## Source
 
-ADLS Gen2 raw files
+Azure Data Lake Storage Gen2 raw files.
 
-### Sink
+## Sink
 
-Bronze container in Data Lake
+Bronze container in Data Lake.
+
+Example path: /bronze/retail_sales/
+
 
 ---
 
@@ -162,7 +105,7 @@ Records failing validation rules are written to a **quarantine location**.
 /silver/quarantine/
 ```
 
-This allows investigation of data issues without affecting analytics.
+This allows investigation of data issues without affecting analytics workloads.
 
 ---
 
@@ -332,25 +275,88 @@ Example:
 If a product price changes, the old value is replaced with the new value.
 
 ---
+# Pipeline Monitoring and Alerts
 
-# Azure Data Factory Pipeline Flow
+To ensure reliability, the pipeline includes **automated monitoring and alerting**.
 
-```
-Lookup Last Load
-      ↓
-Lookup Current Load
-      ↓
-Copy Incremental Data
-      ↓
-Update Watermark
-      ↓
-Bronze Notebook
-      ↓
-Silver Notebook
-      ↓
-Dimension Notebooks
-      ↓
-Fact Sales Notebook
-```
+## Failure Alert Mechanism
+
+If any activity fails:
+
+1. Azure Data Factory triggers a **Web Activity**
+2. The Web Activity sends a request to an **Azure Logic App**
+3. Logic App sends an **email notification**
+
 
 ---
+
+# Audit Logging
+
+Pipeline executions are logged in the table
+pipeline_audit_log
+
+Captured information includes:
+
+- Pipeline Name
+- Pipeline Run ID
+- Activity Name
+- Source System
+- Table Processed
+- Start Time
+- End Time
+- Execution Status
+- Processed Row Count
+- Watermark Value
+- Error Message
+
+---
+# Scheduling
+
+The pipeline is triggered automatically using an **Azure Data Factory Trigger** that runs every **12 hours**.
+
+---
+
+# CI/CD Implementation
+
+The project uses **GitHub integration with Azure Data Factory**.
+
+Workflow
+
+1. Development happens in **feature branches**
+2. Code is merged into **main branch**
+3. Azure Data Factory publishes pipelines
+4. CI/CD deploys updated pipelines
+
+---
+
+# Technologies Used
+
+- Azure Data Factory – Pipeline orchestration
+- Azure Data Lake Storage Gen2 – Data lake storage
+- Azure Databricks – Data transformation
+- Azure SQL Database – Watermark tracking and audit logs
+- Delta Lake – Gold layer storage
+- PySpark – Distributed data processing
+- Azure Logic Apps – Email alert notifications
+- GitHub – Version control
+- CI/CD Pipelines – Automated deployment
+
+---
+
+# Key Data Engineering Concepts Demonstrated
+
+This project demonstrates several important data engineering concepts:
+
+- Medallion Architecture (Bronze / Silver / Gold)
+- Incremental Data Processing
+- Watermark-Based Data Loading
+- Data Quality Validation
+- Star Schema Data Modeling
+- Slowly Changing Dimensions (SCD Type 1)
+- Distributed Data Processing with PySpark
+- Pipeline Monitoring and Alerting
+- CI/CD for Data Pipelines
+- Cloud Data Engineering using Azure Services
+
+
+
