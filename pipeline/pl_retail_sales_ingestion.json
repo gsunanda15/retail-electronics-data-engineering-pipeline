@@ -93,7 +93,7 @@
 						{
 							"type": "Query",
 							"text": {
-								"value": "SELECT COUNT(*) FROM dbo.sales_raw\nWHERE Order_Date > '@{activity('lastload').output.firstRow.LAST_LOAD}'\nAND Order_Date <= '@{activity('currentload').output.firstRow.current_load}'",
+								"value": "@concat(\n'SELECT COUNT(*) as RC FROM dbo.sales_raw WHERE Order_Date > ''',\nactivity('lastload').output.firstRow.LAST_LOAD,\n''' AND Order_Date <= ''',\nactivity('currentload').output.firstRow.current_load,\n''''\n)",
 								"type": "Expression"
 							}
 						}
@@ -104,8 +104,6 @@
 			{
 				"name": "Incrementalrows",
 				"type": "IfCondition",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Failed",
 				"dependsOn": [
 					{
 						"activity": "rowcount",
@@ -117,7 +115,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@activity('rowcount ').output>, 0",
+						"value": "@greater(activity('rowcount').output.resultSets[0].rows[0].RC,0)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
