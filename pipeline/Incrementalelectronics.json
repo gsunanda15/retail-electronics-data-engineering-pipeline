@@ -256,6 +256,12 @@
 						"dependencyConditions": [
 							"Succeeded"
 						]
+					},
+					{
+						"activity": "currentload",
+						"dependencyConditions": [
+							"Succeeded"
+						]
 					}
 				],
 				"policy": {
@@ -274,7 +280,7 @@
 					"scripts": [
 						{
 							"type": "Query",
-							"text": "select count(*) from from [dbo].[sales_raw] "
+							"text": "select count(*) from [dbo].[sales_raw] where Order_Date >'@{activity('lastload').output.firstRow.LAST_LOAD}' and  Order_Date <='@{activity('currentload').output.firstRow.current_load}'"
 						}
 					],
 					"scriptBlockExecutionTimeout": "02:00:00"
@@ -429,12 +435,6 @@
 						}
 					]
 				}
-			},
-			{
-				"name": "Incrementalload_copy1",
-				"type": "IfCondition",
-				"dependsOn": [],
-				"userProperties": []
 			}
 		],
 		"annotations": [],

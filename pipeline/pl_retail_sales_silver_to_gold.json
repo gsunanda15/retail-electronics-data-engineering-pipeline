@@ -1,0 +1,196 @@
+{
+	"name": "pl_retail_sales_silver_to_gold",
+	"properties": {
+		"activities": [
+			{
+				"name": "sliver",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/electronicsproject/sliver"
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks_LS",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "dim_Customers",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "sliver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/electronicsproject/dim_Customers",
+					"baseParameters": {
+						"Incremental_Flag": "1"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks_LS",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "dim_Products",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "sliver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/electronicsproject/dim_Products",
+					"baseParameters": {
+						"Incremental_Flag": "1"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks_LS",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "dim_store",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "sliver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/electronicsproject/dim_store",
+					"baseParameters": {
+						"Incremental_Flag": "1"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks_LS",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "dim_Date",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "sliver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/electronicsproject/dim_Date",
+					"baseParameters": {
+						"Incremental_Flag": "1"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks_LS",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "fact_sales",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "dim_Customers",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "dim_Products",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "dim_store",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "dim_Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/electronicsproject/fact_sales",
+					"baseParameters": {
+						"Incremental_Flag": "1"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks_LS",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": []
+	}
+}
